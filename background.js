@@ -1,45 +1,27 @@
-// add option to exclude some websites
-// add storage sync implementation
+// TODO: add option to exclude some websites
 
-const visitedWebsites = [];
-const excludeWebsites = [
-    "chrome://new-tab-page/",
-    "chrome://newtab/",
-];
+import {
+    excludeWebsites,
+    changeIcon,
+    getTabData,
+    UNVISITED_ICON,
+    VISITED_ICON,
+    VISITED_DOMAIN_ICON,
+} from "./utils.js";
 
-const VISITED_COLOR = "#FF0000";
-const UNVISITED_COLOR = "#00FF00";
-const VISITED_DOMAIN_COLOR = "#FFA500";
-
-const VISITED_ICON = "icons/eye-bg-w.png";
-const UNVISITED_ICON = "icons/hidden-bg-w.png"; 
-const VISITED_DOMAIN_ICON = "icons/eye-greyed.png"; 
-
-function changeIcon(icon) {
-    // const canvas = new OffscreenCanvas(16, 16);
-    // const context = canvas.getContext("2d");
-    // context.clearRect(0, 0, 16, 16);
-    // context.fillStyle = color; // Green
-    // context.fillRect(0, 0, 16, 16);
-    // const imageData = context.getImageData(0, 0, 16, 16);
-
-    chrome.action.setIcon({ path: icon }, () => { });
-}
-
-// changeIcon("#00FF00");
 changeIcon(UNVISITED_ICON);
 
-async function getTabData(tabId) {
-    try {
-        const tab = await chrome.tabs.get(tabId);
-        return tab;
-    } catch (error) {
-        console.log(error);
-        return null;
-    }
-}
+let visitedWebsites = [];
 
 async function pushUrl(url, activated = false) {
+    // await chrome.storage.sync.remove("urls");
+
+    const { urls } = await chrome.storage.sync.get(["urls"]);
+
+    visitedWebsites = urls ?? [];
+
+    console.log(visitedWebsites);
+
     if (excludeWebsites.includes(url)) return;
 
     const visitedWebsiteIndex = visitedWebsites.findIndex(
@@ -49,11 +31,11 @@ async function pushUrl(url, activated = false) {
     const urlObj = new URL(url);
     const { hostname } = urlObj;
 
-    const visitedDomain = visitedWebsites?.some(website => website?.visitedUrl?.includes(hostname));
+    const visitedDomain = visitedWebsites?.some(website =>
+        website?.visitedUrl?.includes(hostname)
+    );
 
     console.log(visitedWebsites);
-
-    console.log("1");
 
     if (visitedWebsiteIndex === -1) {
         visitedWebsites.push({
@@ -61,13 +43,10 @@ async function pushUrl(url, activated = false) {
             visitedCount: 1,
         });
 
-        if (visitedDomain)
-            // changeIcon(VISITED_DOMAIN_COLOR);
-            changeIcon(VISITED_DOMAIN_ICON);
-        else
-            // changeIcon(UNVISITED_COLOR);
-            changeIcon(UNVISITED_ICON);
-        console.log("2")
+        await chrome.storage.sync.set({ urls: visitedWebsites });
+
+        if (visitedDomain) changeIcon(VISITED_DOMAIN_ICON);
+        else changeIcon(UNVISITED_ICON);
         return;
     }
 
@@ -75,32 +54,19 @@ async function pushUrl(url, activated = false) {
 
     if (visitedWebsite.visitedCount < 2 && !activated) {
         visitedWebsite.visitedCount++;
-        // changeIcon(VISITED_COLOR);
         changeIcon(VISITED_ICON);
         return;
     }
 
-    console.log("3")
     if (visitedWebsite.visitedCount === 2) {
         console.log(visitedWebsite.visitedCount);
         changeIcon(VISITED_ICON);
-        // changeIcon(VISITED_COLOR);
         return;
     }
-    // changeIcon(UNVISITED_COLOR);
     changeIcon(UNVISITED_ICON);
 }
 
-// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-//     const { url, status } = changeInfo;
-
-//     if (url) {
-//         console.log("updated", url);
-//         pushUrl(url);
-//     }
-// });
-
-chrome.webNavigation.onBeforeNavigate.addListener((details) => {
+chrome.webNavigation.onBeforeNavigate.addListener(details => {
     if (details.frameId === 0 && details.tabId !== -1) {
         pushUrl(details.url);
     }
@@ -113,5 +79,4 @@ chrome.tabs.onActivated.addListener(async activeInfo => {
     if (url) {
         pushUrl(url, true);
     }
-
 });
