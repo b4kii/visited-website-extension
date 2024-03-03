@@ -1,0 +1,30 @@
+.content {
+    width: 200px;
+}
+
+.wrapper {
+    margin-inline: auto;
+    width: max-content;
+}
+
+.header {
+    font-size: 1.25rem;
+}
+
+img {
+    transform: scale(1.5);
+}
+
+.legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+}

@@ -1,0 +1,22 @@
+{
+    "manifest_version": 3,
+    "name": "Viewed websites",
+    "version": "1.0",
+    "description": "Recently viewed",
+    "permissions": ["activeTab", "tabs", "storage", "webNavigation"],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_popup": "popup/index.html",
+        "default_title": "Visited websites",
+        "default_icon": "icons/hidden-bg-w.png"
+    },
+    "content_scripts": [
+        {
+            "matches": ["*://*/*"],
+            "css": ["popup/styles.css"],
+            "js": ["scripts/content.js"]
+        }
+    ]
+}
